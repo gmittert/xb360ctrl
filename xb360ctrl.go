@@ -20,10 +20,35 @@ import "C"
 
 // Js_even is a Go analog to the C Joystick struct
 type Xbc_event struct {
-  Time int
-  Value int
-  EventType int
-  Number int
+  Time uint32
+  Value int16
+  EventType uint8
+  Number uint8
+}
+
+// MarshalBinary encodes the event into binary and returns the result
+func (e Xbc_event) MarshalBinary() (data []byte, err error) {
+  // 32 + 16 + 8 + 8 = 64bits = 8 bytes
+  a := make([]byte, 8)
+
+  a[0] = byte(e.Time >> 24)
+  a[1] = byte((e.Time >> 16)& 0xff)
+  a[2] = byte((e.Time >> 8) & 0xffff)
+  a[3] = byte(e.Time & 0xffffff)
+  a[4] = byte(e.Value >> 8)
+  a[5] = byte(e.Value & 0xff)
+  a[6] = byte(e.EventType)
+  a[7] = byte(e.Number)
+  return a, nil
+}
+
+// MarshalBinary encodes the event into binary and returns the result
+func (e *Xbc_event) UnMarshalBinary(data []byte) (err error) {
+  e.Time = uint32((data[0] << 24) + (data[1] << 16) + (data[2]) << 8 + data[3])
+  e.Value = int16((data[4] << 8) + data[5])
+  e.EventType = data[6]
+  e.Number = data[7]
+  return nil
 }
 
 // Xbc_state represents the state of a joystick
@@ -39,14 +64,14 @@ type Xbc_state struct {
   RStickPress bool
   LStickPress bool
   Guide bool
-  LStickX int
-  LStickY int
-  RStickX int
-  RStickY int
-  LTrigger int
-  RTrigger int
-  DPadX int
-  DPadY int
+  LStickX uint8
+  LStickY uint8
+  RStickX uint8
+  RStickY uint8
+  LTrigger uint8
+  RTrigger uint8
+  DPadX uint8
+  DPadY uint8
 }
 
 // Init returns a file descriptor to an open joystick for
@@ -60,16 +85,16 @@ func Close(fd int) int {
   return int(C.jsClose(C.int(fd)))
 }
 
-// GetJsEvent reads a single event from the passed file descriptor
-func GetJsEvent(fd int)* Xbc_event {
+// GetXbEvent reads a single event from the passed file descriptor
+func GetXbEvent(fd int)* Xbc_event {
   var e C.struct_js_event
   C.jsRead(C.int(fd), &e)
 
   var event Xbc_event
-  event.Time = int(e.time)
-  event.Value = int(e.value)
-  event.EventType = int(e._type)
-  event.Number = int(e.number)
+  event.Time = uint32(e.time)
+  event.Value = int16(e.value)
+  event.EventType = uint8(e._type)
+  event.Number = uint8(e.number)
   return &event
 }
 
