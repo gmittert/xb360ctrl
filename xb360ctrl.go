@@ -164,22 +164,27 @@ func UpdateState(event *Xbc_event, state *Xbc_state) {
     }
   } else {
 
-    if event.Value < DEADZONE && event.Value > -1*DEADZONE{
-      return
-    }
     switch event.Number {
     case 0:
-      state.LStickX = event.Value
-      DEBUG("LStickX: ", event.Value)
+      if event.Value > DEADZONE || event.Value < -1*DEADZONE {
+        state.LStickX = event.Value
+        DEBUG("LStickX: ", event.Value)
+      }
     case 1:
-      state.LStickY = event.Value
-      DEBUG("LStickY: ", event.Value)
+      if event.Value > DEADZONE || event.Value < -1*DEADZONE {
+        state.LStickY = event.Value
+        DEBUG("LStickY: ", event.Value)
+      }
     case 2:
-      state.LTrigger = event.Value
-      DEBUG("LTrigger: ", event.Value)
+      if event.Value > DEADZONE || event.Value < -1*DEADZONE {
+        state.LTrigger = event.Value
+        DEBUG("LTrigger: ", event.Value)
+      }
     case 3:
-      state.RStickY = event.Value
-      DEBUG("RStickY: ", event.Value)
+      if event.Value > DEADZONE || event.Value < -1*DEADZONE {
+        state.RStickY = event.Value
+        DEBUG("RStickY: ", event.Value)
+      }
     case 4:
       state.RStickX = event.Value
       DEBUG("RStickX: ", event.Value)
@@ -194,4 +199,26 @@ func UpdateState(event *Xbc_event, state *Xbc_state) {
       DEBUG("DPadY: ", event.Value)
     }
   }
+}
+
+func PrepState(state *Xbc_state) {
+  state.A = false;
+  state.B = false;
+  state.X = false;
+  state.Y = false;
+  state.Back = false;
+  state.Start = false;
+  state.LBumper = false;
+  state.RBumper = false;
+  state.RStickPress = false;
+  state.LStickPress = false;
+  state.Guide = false;
+  state.LStickX = 0;
+  state.LStickY = 0;
+  state.RStickX = 0;
+  state.RStickY = 0;
+  state.LTrigger = -32768;
+  state.RTrigger = -32768;
+  state.DPadX = 0;
+  state.DPadY = 0;
 }
