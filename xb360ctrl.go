@@ -1,6 +1,7 @@
 // Package joystick provides functions for monitoring and updating
 // the state of an Xbox 360 controller.
 package xb360ctrl
+import "fmt"
 
 /*
 #include <linux/joystick.h>
@@ -18,6 +19,7 @@ void jsRead(int js, struct js_event* e) {
 */
 import "C"
 
+var DEADZONE int16 = 200;
 // Js_even is a Go analog to the C Joystick struct
 type Xbc_event struct {
   Time uint32
@@ -25,6 +27,22 @@ type Xbc_event struct {
   EventType uint8
   Number uint8
 }
+
+func DEBUG (a ...interface{}) {
+  if debug {
+    fmt.Println(a)
+  }
+}
+
+func DebugModeOn() {
+  debug = true
+}
+
+func DebugModeOff() {
+  debug = false
+}
+
+var debug bool = false
 
 // MarshalBinary encodes the event into binary and returns the result
 func (e Xbc_event) MarshalBinary() (data []byte, err error) {
@@ -44,8 +62,8 @@ func (e Xbc_event) MarshalBinary() (data []byte, err error) {
 
 // MarshalBinary encodes the event into binary and returns the result
 func (e *Xbc_event) UnMarshalBinary(data []byte) (err error) {
-  e.Time = uint32((data[0] << 24) + (data[1] << 16) + (data[2]) << 8 + data[3])
-  e.Value = int16((data[4] << 8) + data[5])
+  e.Time = uint32(data[0]) << 24 + uint32(data[1]) << 16 + uint32(data[2]) << 8 + uint32(data[3])
+  e.Value = int16(data[4]) << 8 + int16(data[5])
   e.EventType = data[6]
   e.Number = data[7]
   return nil
@@ -64,14 +82,14 @@ type Xbc_state struct {
   RStickPress bool
   LStickPress bool
   Guide bool
-  LStickX uint8
-  LStickY uint8
-  RStickX uint8
-  RStickY uint8
-  LTrigger uint8
-  RTrigger uint8
-  DPadX uint8
-  DPadY uint8
+  LStickX int16
+  LStickY int16
+  RStickX int16
+  RStickY int16
+  LTrigger int16
+  RTrigger int16
+  DPadX int16
+  DPadY int16
 }
 
 // Init returns a file descriptor to an open joystick for
@@ -103,54 +121,77 @@ func GetXbEvent(fd int)* Xbc_event {
 func UpdateState(event *Xbc_event, state *Xbc_state) {
   if event.EventType == 1 {
     var btn_state bool
-    if event.Number == 0 {
+    if event.Value == 0 {
       btn_state = false
     } else {
       btn_state = true
     }
 
-    switch event.Value {
+    switch event.Number {
     case 0:
       state.A = btn_state
+      DEBUG("A: ", btn_state)
     case 1:
       state.B = btn_state
+      DEBUG("B: ", btn_state)
     case 2:
       state.X = btn_state
+      DEBUG("X: ", btn_state)
     case 3:
       state.Y = btn_state
+      DEBUG("Y: ", btn_state)
     case 4:
       state.LBumper = btn_state
+      DEBUG("LBumper: ", btn_state)
     case 5:
       state.RBumper = btn_state
+      DEBUG("RBumper: ", btn_state)
     case 6:
       state.Back = btn_state
+      DEBUG("Back: ", btn_state)
     case 7:
       state.Start = btn_state
+      DEBUG("Start: ", btn_state)
     case 8:
       state.Guide = btn_state
+      DEBUG("Guide: ", btn_state)
     case 9:
       state.LStickPress = btn_state
+      DEBUG("L3: ", btn_state)
     case 10:
       state.RStickPress = btn_state
+      DEBUG("R3: ", btn_state)
     }
   } else {
-    switch event.Value {
+
+    if event.Value < DEADZONE && event.Value > -1*DEADZONE{
+      return
+    }
+    switch event.Number {
     case 0:
-      state.LStickX = event.Number
+      state.LStickX = event.Value
+      DEBUG("LStickX: ", event.Value)
     case 1:
-      state.LStickY = event.Number
+      state.LStickY = event.Value
+      DEBUG("LStickY: ", event.Value)
     case 2:
-      state.RTrigger = event.Number
+      state.LTrigger = event.Value
+      DEBUG("LTrigger: ", event.Value)
     case 3:
-      state.RStickY = event.Number
+      state.RStickY = event.Value
+      DEBUG("RStickY: ", event.Value)
     case 4:
-      state.RStickX = event.Number
+      state.RStickX = event.Value
+      DEBUG("RStickX: ", event.Value)
     case 5:
-      state.RTrigger = event.Number
+      state.RTrigger = event.Value
+      DEBUG("RTrigger: ", event.Value)
     case 6:
-      state.DPadX = event.Number
+      state.DPadX = event.Value
+      DEBUG("DPadX: ", event.Value)
     case 7:
-      state.DPadY = event.Number
+      state.DPadY = event.Value
+      DEBUG("DPadY: ", event.Value)
     }
   }
 }
